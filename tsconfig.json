@@ -21,6 +21,7 @@
     "allowSyntheticDefaultImports": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
     "baseUrl": ".",
     "rootDir": "src"
