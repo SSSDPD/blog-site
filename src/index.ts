@@ -5,6 +5,7 @@
 import { MikroORM } from "@mikro-orm/core";
 import { __prod__ } from "./constants";
 import { Post } from "./entities/Post";
+import mikroConfig from "./mikro-orm.config";
 
 // @Resolver()
 // class HelloResolver {
@@ -15,18 +16,16 @@ import { Post } from "./entities/Post";
 // }
 
 const main = async () => {
-  const orm = await MikroORM.init({
-    entities: [Post],
-    dbName: "blogsite",
-    type: "postgresql",
-    debug: !__prod__,
-  });
+  const orm = await MikroORM.init(mikroConfig);
+  await orm.getMigrator().up();
+  // const post = orm.em.create(Post, {
+  //   title: "First Post",
+  // }); //creates the post with a specific title
 
-  const post = orm.em.create(Post, {
-    title: "First Post",
-  }); //creates the post with a specific title
+  // await orm.em.persistAndFlush(post); //adds the post to the database
 
-  orm.em.persistAndFlush(post); //adds the post to the database
+  const posts = await orm.em.find(Post, {});
+  console.log(posts);
 
   // const schema = await buildSchema({
   //   resolvers: [HelloResolver],
@@ -42,4 +41,6 @@ const main = async () => {
   // });
 };
 
-main();
+main().catch((error) => {
+  console.log(error);
+});
