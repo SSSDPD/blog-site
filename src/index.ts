@@ -4,7 +4,6 @@ import Express from "express";
 import { buildSchema, Query, Resolver } from "type-graphql";
 import { MikroORM } from "@mikro-orm/core";
 import { __prod__ } from "./constants";
-import { Post } from "./entities/Post";
 import mikroConfig from "./mikro-orm.config";
 
 @Resolver()
