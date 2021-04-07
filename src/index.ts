@@ -1,18 +1,15 @@
 import { ApolloServer } from "apollo-server-express";
 import "reflect-metadata";
 import Express from "express";
-import { buildSchema, Query, Resolver } from "type-graphql";
+import { buildSchema} from "type-graphql";
 import { MikroORM } from "@mikro-orm/core";
 import { __prod__ } from "./constants";
 import mikroConfig from "./mikro-orm.config";
 
-@Resolver()
-class HelloResolver {
-  @Query(() => String)
-  async hello() {
-    return "Hello Graphql";
-  }
-}
+
+import { RegisterResolver } from './modules/user/Register';
+
+
 
 const main = async () => {
   const orm = await MikroORM.init(mikroConfig);
@@ -27,7 +24,7 @@ const main = async () => {
   // console.log(posts);
 
   const schema = await buildSchema({
-    resolvers: [HelloResolver],
+    resolvers: [RegisterResolver],
   });
   const apolloServer = new ApolloServer({ schema });
 
