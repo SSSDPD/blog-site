@@ -7,7 +7,7 @@ import { __prod__ } from "./constants";
 import mikroConfig from "./mikro-orm.config";
 
 
-import { RegisterResolver } from './modules/user/Registration';
+import { RegisterResolver } from './modules/user/Register';
 
 
 

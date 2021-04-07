@@ -9,7 +9,7 @@
     "@mikro-orm/migrations": "^4.5.0",
     "@mikro-orm/postgresql": "^4.5.0",
     "apollo-server-express": "^2.22.2",
-    "bcrypt": "^5.0.1",
+    "bcryptjs": "^2.4.3",
     "express": "^4.17.1",
     "graphql": "^15.5.0",
     "pg": "^8.5.1",

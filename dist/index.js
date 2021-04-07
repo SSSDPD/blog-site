@@ -18,12 +18,12 @@ const express_1 = __importDefault(require("express"));
 const type_graphql_1 = require("type-graphql");
 const core_1 = require("@mikro-orm/core");
 const mikro_orm_config_1 = __importDefault(require("./mikro-orm.config"));
-const Registration_1 = require("./modules/user/Registration");
+const Register_1 = require("./modules/user/Register");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const orm = yield core_1.MikroORM.init(mikro_orm_config_1.default);
     yield orm.getMigrator().up();
     const schema = yield type_graphql_1.buildSchema({
-        resolvers: [Registration_1.RegisterResolver],
+        resolvers: [Register_1.RegisterResolver],
     });
     const apolloServer = new apollo_server_express_1.ApolloServer({ schema });
     const app = express_1.default();
