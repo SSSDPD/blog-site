@@ -1,32 +1,26 @@
 import { ApolloServer } from "apollo-server-express";
 import "reflect-metadata";
 import Express from "express";
-import { buildSchema} from "type-graphql";
+import { buildSchema } from "type-graphql";
 import { MikroORM } from "@mikro-orm/core";
 import { __prod__ } from "./constants";
 import mikroConfig from "./mikro-orm.config";
-
-
-import { RegisterResolver } from './modules/user/Register';
-
-
+// import { RegisterResolver } from "./resolvers/register";
+import { HelloResolver } from "./resolvers/hello";
+import { PostResolver } from "./resolvers/post";
 
 const main = async () => {
   const orm = await MikroORM.init(mikroConfig);
   await orm.getMigrator().up();
-  // const post = orm.em.create(Post, {
-  //   title: "First Post",
-  // }); //creates the post with a specific title
-
-  // await orm.em.persistAndFlush(post); //adds the post to the database
-
-  // const posts = await orm.em.find(Post, {});
-  // console.log(posts);
 
   const schema = await buildSchema({
-    resolvers: [RegisterResolver],
+    resolvers: [HelloResolver, PostResolver],
+    validate: false,
   });
-  const apolloServer = new ApolloServer({ schema });
+  const apolloServer = new ApolloServer({
+    schema,
+    context: () => ({ em: orm.em }),
+  });
 
   const app = Express();
 
