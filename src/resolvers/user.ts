@@ -1,61 +1,165 @@
-import { User } from '../entities/User';
-import { Resolver, Mutation, Arg, Ctx, Query } from "type-graphql";
-import * as bcrypt from "bcryptjs";
-import { MyContext } from '../types';
+import argon2 from "argon2";
+import { User } from "../entities/User";
+import {
+  Resolver,
+  Mutation,
+  Arg,
+  Ctx,
+  Field,
+  InputType,
+  ObjectType,
+  Query,
+} from "type-graphql";
+import { MyContext } from "../types";
+
+@InputType()
+class RegisterUserArgument {
+  @Field()
+  email: string;
+
+  @Field()
+  password: string;
+
+  @Field()
+  firstName: string;
+
+  @Field()
+  lastName: string;
+
+  @Field()
+  username: string;
+}
+
+@InputType()
+class LoginUserArgument {
+  @Field()
+  password: string;
+
+  @Field()
+  username: string;
+}
+
+@ObjectType()
+class FieldError {
+  @Field()
+  field: string;
+
+  @Field()
+  message: string;
+}
+@ObjectType()
+class UserResponse {
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+
+  @Field(() => User, { nullable: true })
+  user?: User;
+}
 
 @Resolver()
 export class UserResolver {
-  @Mutation(() => User)
-  async registerUser(
-    @Arg("email") email: string,
-    @Arg("password") password: string,
-    @Arg("firstName") firstName: string,
-    @Arg("lastName") lastName: string,
-    @Arg("username") username: string,
-    @Ctx() ctx: MyContext
-  ): Promise<User> {
-    const hashedPass = await bcrypt.hash(password, 10);
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() ctx: MyContext) {
+    if (!ctx.req.session.userId) {
+      return null;
+    }
 
-    const user = ctx.em.create(User, 
-      {email, 
-      password: hashedPass,
-      firstName,
-      lastName,
-      username});
-    
-    await ctx.em.persistAndFlush(user);
+    const user = await ctx.em.findOne(User, { id: ctx.req.session.userId });
     return user;
   }
 
-  @Query(()=> User, { nullable: true })
-  findUser(@Arg("id") id: number, @Ctx() ctx: MyContext): Promise<User | null> {
-    return ctx.em.findOne(User, { id });
+  @Mutation(() => UserResponse)
+  async registerUser(
+    @Arg("register_args") register_args: RegisterUserArgument,
+    @Ctx() ctx: MyContext
+  ): Promise<UserResponse> {
+    if (register_args.password.length <= 2) {
+      return {
+        errors: [
+          {
+            field: "password",
+            message: "length must be greater than 2",
+          },
+        ],
+      };
+    }
+
+    if (register_args.username.length <= 2) {
+      return {
+        errors: [
+          {
+            field: "username",
+            message: "length must be greater than 2",
+          },
+        ],
+      };
+    }
+    const hashedPass = await argon2.hash(register_args.password);
+
+    const user = ctx.em.create(User, {
+      email: register_args.email,
+      password: hashedPass,
+      firstName: register_args.firstName,
+      lastName: register_args.lastName,
+      username: register_args.username,
+    });
+    try {
+      await ctx.em.persistAndFlush(user);
+    } catch (err) {
+      if (
+        err.code === "23505" ||
+        err.detail.includes("already exists") ||
+        err.name === "UniqueConstraintViolationException"
+      ) {
+        return {
+          errors: [
+            {
+              field: "username",
+              message: "Username already taken, try another :)",
+            },
+          ],
+        };
+      }
+    }
+    ctx.req.session.userId = user.id;
+    return { user };
   }
 
-  // @Mutation(() => User, { nullable: true })
-  // async updateUser(
-  //   @Arg("id") id: number,
-  //   @Arg("username", () => String, { nullable: true }) username: string,
-  //   @Arg("password", () => String, { nullable: true }) password: string,
-  //   @Ctx() ctx: MyContext
-  // ): Promise<User | null> {
-  //   const user = await ctx.em.findOne(User, { id });
-  //   if (!user) return null;
+  @Mutation(() => UserResponse)
+  async loginUser(
+    @Arg("register_args") register_args: LoginUserArgument,
+    @Ctx() ctx: MyContext
+  ): Promise<UserResponse> {
+    const user = await ctx.em.findOne(User, {
+      username: register_args.username,
+    });
 
-  //   if (typeof title !== "undefined") {
-  //     user.title = title;
-  //     await ctx.em.persistAndFlush(user);
-  //   }
+    if (!user) {
+      return {
+        errors: [
+          {
+            field: "username",
+            message: "I did not find anyone with that username :(",
+          },
+        ],
+      };
+    }
 
-  //   return user;
-  // }
-
-  // @Mutation(() => String)
-  // async deletePost(
-  //   @Arg("id") id: number,
-  //   @Ctx() ctx: MyContext
-  // ): Promise<string> {
-  //   await ctx.em.nativeDelete(User, { id });
-  //   return "User successfully deleted";
-  // }
+    const verifyPassword = await argon2.verify(
+      user.password,
+      register_args.password
+    );
+    if (!verifyPassword) {
+      return {
+        errors: [
+          {
+            field: "password",
+            message: "Incorrect Password",
+          },
+        ],
+      };
+    }
+    ctx.req.session.userId = user.id;
+    return { user };
+  }
 }
