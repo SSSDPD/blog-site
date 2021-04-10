@@ -9,7 +9,7 @@ export class User{
   id!: number;
 
   @Field()
-  @Property()
+  @Property({ unique: true })
   email!: string;
 
   @Field()
