@@ -111,13 +111,27 @@ export class UserResolver {
         err.detail.includes("already exists") ||
         err.name === "UniqueConstraintViolationException"
       ) {
-        return {
-          errors: [
-            {
-              field: "username",
-              message: "Username already taken, try another :)",
-            },
-          ],
+        if(err.constraint === "user_email_unique"){
+          return {
+              errors: [
+                {
+                  field: "Email",
+                  message: "Email Aready Exist",
+                },
+              ],
+            };
+            
+        };
+        if(err.constraint === "user_username_unique"){
+          return {
+              errors: [
+                {
+                  field: "Username",
+                  message: "Username Aready Exist. Try another one ;)",
+                },
+              ],
+            };
+            
         };
       }
     }
