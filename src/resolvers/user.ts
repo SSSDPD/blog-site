@@ -115,7 +115,7 @@ export class UserResolver {
           return {
               errors: [
                 {
-                  field: "Email",
+                  field: "email",
                   message: "Email Aready Exist",
                 },
               ],
@@ -126,7 +126,7 @@ export class UserResolver {
           return {
               errors: [
                 {
-                  field: "Username",
+                  field: "username",
                   message: "Username Aready Exist. Try another one ;)",
                 },
               ],
