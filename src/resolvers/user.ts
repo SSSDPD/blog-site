@@ -11,6 +11,7 @@ import {
   Query,
 } from "type-graphql";
 import { MyContext } from "../types";
+import { COOKIE_NAME } from "../constants";
 
 @InputType()
 class RegisterUserArgument {
@@ -111,28 +112,26 @@ export class UserResolver {
         err.detail.includes("already exists") ||
         err.name === "UniqueConstraintViolationException"
       ) {
-        if(err.constraint === "user_email_unique"){
+        if (err.constraint === "user_email_unique") {
           return {
-              errors: [
-                {
-                  field: "Email",
-                  message: "Email Aready Exist",
-                },
-              ],
-            };
-            
-        };
-        if(err.constraint === "user_username_unique"){
+            errors: [
+              {
+                field: "Email",
+                message: "Email Aready Exist",
+              },
+            ],
+          };
+        }
+        if (err.constraint === "user_username_unique") {
           return {
-              errors: [
-                {
-                  field: "Username",
-                  message: "Username Aready Exist. Try another one ;)",
-                },
-              ],
-            };
-            
-        };
+            errors: [
+              {
+                field: "Username",
+                message: "Username Aready Exist. Try another one ;)",
+              },
+            ],
+          };
+        }
       }
     }
     ctx.req.session.userId = user.id;
@@ -175,5 +174,21 @@ export class UserResolver {
     }
     ctx.req.session.userId = user.id;
     return { user };
+  }
+
+  @Mutation(() => Boolean)
+  logoutUser(@Ctx() ctx: MyContext) {
+    return new Promise((res) =>
+      ctx.req.session.destroy((err) => {
+        ctx.res.clearCookie(COOKIE_NAME);
+        if (err) {
+          console.log(err);
+
+          res(false);
+          return;
+        }
+        res(true);
+      })
+    );
   }
 }

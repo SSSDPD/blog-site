@@ -3,7 +3,7 @@ import "reflect-metadata";
 import express from "express";
 import { buildSchema } from "type-graphql";
 import { MikroORM } from "@mikro-orm/core";
-import { __prod__ } from "./constants";
+import { COOKIE_NAME, __prod__ } from "./constants";
 import mikroConfig from "./mikro-orm.config";
 import { UserResolver } from "./resolvers/user";
 import { HelloResolver } from "./resolvers/hello";
@@ -23,7 +23,7 @@ const main = async () => {
   app.use(cors({ origin: "http://localhost:3000", credentials: true }));
   app.use(
     session({
-      name: "sssdpd",
+      name: COOKIE_NAME,
       store: new RedisStore({
         client: redisClient,
         disableTTL: true,
