@@ -10,10 +10,14 @@ import {
   ObjectType,
   Query,
 } from "type-graphql";
+import { v4 } from "uuid";
 import { MyContext } from "../types";
+import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
+import { validateRegister } from "../utils/validate";
+import { sendEmail } from "../utils/sendEmail";
 
 @InputType()
-class RegisterUserArgument {
+export class RegisterUserArgument {
   @Field()
   email: string;
 
@@ -68,32 +72,80 @@ export class UserResolver {
     return user;
   }
 
+  @Mutation(()=> UserResponse)
+  async changePassword(
+    @Arg("token") token: string,
+    @Arg("newPassword") newPassword: string,
+    @Ctx() { em,redis,req }: MyContext
+  ): Promise<UserResponse>{
+    if (newPassword.length <= 2) {
+      return { errors: [
+          {
+            field: "newPassword",
+            message: "length must be greater than 2",
+          },
+        ]
+      };
+    } 
+    const key = FORGET_PASSWORD_PREFIX+token;
+    const userId = await redis.get(key)
+    if (!userId){
+      return { errors: [
+          {
+            field: 'token',
+            message: 'Token Expired'
+          }
+        ]
+      }
+    }
+
+    const user = await em.findOne(User,{ id: parseInt(userId) })
+
+    if (!user){
+        return { errors: [
+          {
+            field: 'token',
+            message: 'user no longer exist'
+          }
+        ]
+      }
+    }
+
+    user.password = await argon2.hash(newPassword);
+    await em.persistAndFlush(user);
+
+    await redis.del(key);
+
+    req.session.userId = user.id;
+
+    return {user};
+  }
+
+  @Mutation(() => Boolean)
+  async forgotPassword(
+    @Arg('email') email: string,
+    @Ctx() {em, redis} : MyContext
+  ){
+    const user = await em.findOne(User, { email });
+    if (!user) return true;
+
+    const token=v4();
+
+    await redis.set(FORGET_PASSWORD_PREFIX + token, user.id, 'ex', 1000*60*60); // 1hour 
+
+    await sendEmail(email,
+      `<a href="http://localhost:3000/change-password/${token}">reset password</a>`
+    );
+    return true;
+  }
+
   @Mutation(() => UserResponse)
   async registerUser(
     @Arg("register_args") register_args: RegisterUserArgument,
     @Ctx() ctx: MyContext
   ): Promise<UserResponse> {
-    if (register_args.password.length <= 2) {
-      return {
-        errors: [
-          {
-            field: "password",
-            message: "length must be greater than 2",
-          },
-        ],
-      };
-    }
-
-    if (register_args.username.length <= 2) {
-      return {
-        errors: [
-          {
-            field: "username",
-            message: "length must be greater than 2",
-          },
-        ],
-      };
-    }
+    const errors = validateRegister(register_args);
+    if (errors) return { errors };
     const hashedPass = await argon2.hash(register_args.password);
 
     const user = ctx.em.create(User, {
@@ -111,28 +163,26 @@ export class UserResolver {
         err.detail.includes("already exists") ||
         err.name === "UniqueConstraintViolationException"
       ) {
-        if(err.constraint === "user_email_unique"){
+        if (err.constraint === "user_email_unique") {
           return {
-              errors: [
-                {
-                  field: "email",
-                  message: "Email Aready Exist",
-                },
-              ],
-            };
-            
-        };
-        if(err.constraint === "user_username_unique"){
+            errors: [
+              {
+                field: "email",
+                message: "Email Aready Exist",
+              },
+            ],
+          };
+        }
+        if (err.constraint === "user_username_unique") {
           return {
-              errors: [
-                {
-                  field: "username",
-                  message: "Username Aready Exist. Try another one ;)",
-                },
-              ],
-            };
-            
-        };
+            errors: [
+              {
+                field: "ussername",
+                message: "Username Aready Exist. Try another one ;)",
+              },
+            ],
+          };
+        }
       }
     }
     ctx.req.session.userId = user.id;
@@ -175,5 +225,21 @@ export class UserResolver {
     }
     ctx.req.session.userId = user.id;
     return { user };
+  }
+
+  @Mutation(() => Boolean)
+  logoutUser(@Ctx() ctx: MyContext) {
+    return new Promise((res) =>
+      ctx.req.session.destroy((err) => {
+        ctx.res.clearCookie(COOKIE_NAME);
+        if (err) {
+          console.log(err);
+
+          res(false);
+          return;
+        }
+        res(true);
+      })
+    );
   }
 }
