@@ -11,8 +11,7 @@ export class FeatureImageResolver {
   ): Promise<boolean> {
     const { createReadStream, filename } = await picture;
     const writableStream = createWriteStream(
-      `${__dirname}/../../../files/images/${filename}`,
-      { autoClose: true }
+      __dirname + `/../../images/${filename}`
     );
     return new Promise(async (resolve, reject) => {
       createReadStream()
