@@ -13,6 +13,8 @@ import cors from "cors";
 import { createConnection } from "typeorm";
 import { User } from "./entities/User";
 import { Post } from "./entities/Post";
+import { FeatureImageResolver } from "./resolvers/featureImage";
+import { graphqlUploadExpress } from "graphql-upload";
 
 const main = async () => {
   const conn = createConnection({
@@ -26,9 +28,11 @@ const main = async () => {
   });
 
   const app = express();
+
   const RedisStore = connectRedis(session);
   const redis = new Redis();
   app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+
   app.use(
     session({
       name: COOKIE_NAME,
@@ -50,14 +54,20 @@ const main = async () => {
   );
 
   const schema = await buildSchema({
-    resolvers: [HelloResolver, PostResolver, UserResolver],
+    resolvers: [
+      HelloResolver,
+      PostResolver,
+      UserResolver,
+      FeatureImageResolver,
+    ],
     validate: false,
   });
   const apolloServer = new ApolloServer({
     schema,
     context: ({ req, res }) => ({ req, res, redis }),
+    uploads: false,
   });
-
+  app.use(graphqlUploadExpress({ maxFileSize: 100000000, maxFiles: 10 }));
   apolloServer.applyMiddleware({ app, cors: false });
 
   app.listen(4000, () => {

@@ -36,6 +36,14 @@ export class Post extends BaseEntity {
   @ManyToOne(() => User, (user) => user.posts)
   creator: User;
 
+  @Field()
+  @Column()
+  featureImage: string;
+
+  @Field()
+  @Column()
+  tags: string;
+
   @Field(() => String)
   @CreateDateColumn()
   createdAt: Date;
