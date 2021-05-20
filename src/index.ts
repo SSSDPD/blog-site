@@ -32,7 +32,10 @@ const main = async () => {
   const RedisStore = connectRedis(session);
   const redis = new Redis();
   app.use(cors({ origin: "http://localhost:3000", credentials: true }));
-
+  app.use(
+    "/graphql",
+    graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 })
+  );
   app.use(
     session({
       name: COOKIE_NAME,
@@ -62,12 +65,12 @@ const main = async () => {
     ],
     validate: false,
   });
+
   const apolloServer = new ApolloServer({
     schema,
     context: ({ req, res }) => ({ req, res, redis }),
     uploads: false,
   });
-  app.use(graphqlUploadExpress({ maxFileSize: 100000000, maxFiles: 10 }));
   apolloServer.applyMiddleware({ app, cors: false });
 
   app.listen(4000, () => {
