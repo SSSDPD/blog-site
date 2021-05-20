@@ -7,13 +7,13 @@ export class FeatureImageResolver {
   @Mutation(() => Boolean)
   async featureImage(
     @Arg("picture", () => GraphQLUpload)
-    picture: FileUpload
+    { createReadStream, filename }: FileUpload
   ): Promise<boolean> {
-    const { createReadStream, filename } = await picture;
+    // const { createReadStream, filename } = await picture;
     const writableStream = createWriteStream(
       __dirname + `/../../images/${filename}`
     );
-    return new Promise(async (resolve, reject) => {
+    return await new Promise(async (resolve, reject) => {
       createReadStream()
         .pipe(writableStream)
         .on("finish", () => resolve(true))

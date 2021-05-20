@@ -44,7 +44,7 @@
     "watch": "tsc -w"
   },
   "resolutions": {
-    "**/**/fs-capacitor": "^5.0.0",
-    "**/graphql-upload": "^9.0.0"
+    "**/**/fs-capacitor": "^6.2.0",
+    "**/graphql-upload": "^11.0.0"
   }
 }
