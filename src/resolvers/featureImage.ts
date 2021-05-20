@@ -9,7 +9,6 @@ export class FeatureImageResolver {
     @Arg("picture", () => GraphQLUpload)
     { createReadStream, filename }: FileUpload
   ): Promise<boolean> {
-    // const { createReadStream, filename } = await picture;
     const writableStream = createWriteStream(
       __dirname + `/../../images/${filename}`
     );

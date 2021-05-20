@@ -37,12 +37,11 @@ export class Post extends BaseEntity {
   creator: User;
 
   @Field()
-  @Column()
   featureImage: string;
 
-  @Field()
-  @Column()
-  tags: string;
+  // @Field()
+  // @Column()
+  // tags: string;
 
   @Field(() => String)
   @CreateDateColumn()
