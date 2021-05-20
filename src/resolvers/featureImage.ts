@@ -12,7 +12,7 @@ export class FeatureImageResolver {
     const writableStream = createWriteStream(
       __dirname + `/../../images/${filename}`
     );
-    return new Promise(async (resolve, reject) => {
+    return await new Promise(async (resolve, reject) => {
       createReadStream()
         .pipe(writableStream)
         .on("finish", () => resolve(true))
