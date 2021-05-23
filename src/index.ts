@@ -15,6 +15,7 @@ import { User } from "./entities/User";
 import { Post } from "./entities/Post";
 import { FeatureImageResolver } from "./resolvers/featureImage";
 import { graphqlUploadExpress } from "graphql-upload";
+import { Upvote } from "./entities/Upvote";
 
 const main = async () => {
   const conn = createConnection({
@@ -24,7 +25,7 @@ const main = async () => {
     username: "postgres",
     logging: true,
     synchronize: true,
-    entities: [User, Post],
+    entities: [User, Post, Upvote],
   });
 
   const app = express();
