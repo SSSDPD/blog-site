@@ -16,6 +16,7 @@ import { Post } from "./entities/Post";
 import { FeatureImageResolver } from "./resolvers/featureImage";
 import { graphqlUploadExpress } from "graphql-upload";
 import { Upvote } from "./entities/Upvote";
+import path from "path";
 
 const main = async () => {
   const conn = createConnection({
@@ -24,9 +25,12 @@ const main = async () => {
     password: "postgres",
     username: "postgres",
     logging: true,
+    migrations: [path.join(__dirname, "./migrations/*")],
     synchronize: true,
     entities: [User, Post, Upvote],
   });
+
+  (await conn).runMigrations();
 
   const app = express();
 
